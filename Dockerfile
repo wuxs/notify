@@ -1,8 +1,10 @@
 FROM --platform=$TARGETPLATFORM  golang:1.17 as builder
 
+WORKDIR /app
+
 COPY ./* /app/
 
-RUN go build -o /app/notify /app/notify.go
+RUN GOPROXY="https://goproxy.cn" go build -o /app/notify .
 
 FROM --platform=$TARGETPLATFORM scratch
 
