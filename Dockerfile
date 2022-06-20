@@ -1,5 +1,14 @@
-FROM alpine
+FROM --platform=$TARGETPLATFORM  golang:1.17 as builder
 
-COPY notify /app/notify
+COPY ./* /app/
 
-CMD ["/app/notify"]
+RUN go build -o /app/notify /app/notify.go
+
+FROM --platform=$TARGETPLATFORM scratch
+
+COPY --from=builder /app/notify /notify
+
+CMD ["/notify"]
+
+
+
