@@ -1,14 +1,15 @@
-FROM --platform=$TARGETPLATFORM  golang:alpine as builder
+FROM --platform=$BUILDPLATFORM  golang:alpine as builder
 
 WORKDIR /app
 
 COPY ./* /app/
 
-RUN GOPROXY="https://goproxy.cn,direct" go build -o /app/notify .
+RUN GOPROXY="https://goproxy.cn,direct" go build -ldflags="-s -w"  -o notify .
+RUN chmod +x /app/notify
 
 FROM --platform=$TARGETPLATFORM scratch
 
-COPY --from=builder /app/notify /notify
+COPY --from=builder /app/notify /
 
 CMD ["/notify"]
 
