@@ -7,7 +7,7 @@ COPY ./* /app/
 RUN GOPROXY="https://goproxy.cn,direct" go build -ldflags="-s -w"  -o notify .
 RUN chmod +x /app/notify
 
-FROM --platform=$TARGETPLATFORM scratch
+FROM scratch
 
 COPY --from=builder /app/notify /
 
