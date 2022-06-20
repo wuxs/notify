@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -13,10 +13,17 @@ import (
 var cache = make(map[string]int64)
 
 var DefaultAppId string
-var DefaultAgentId int
+var DefaultAgentId string
 var DefaultSecret string
+var DefaultListen string
 var ClientCache = make(map[string]*wechat.Server)
 
+func init() {
+	DefaultAppId = os.Getenv("APP_ID")
+	DefaultAgentId = os.Getenv("AGENT_ID")
+	DefaultSecret = os.Getenv("SECRET")
+	DefaultListen = os.Getenv("LISTEN")
+}
 func NewWechat(appid string, agentid int, secret string) *wechat.Server {
 	cfg := &wechat.WxConfig{
 		AppId:   appid,
@@ -29,18 +36,22 @@ func NewWechat(appid string, agentid int, secret string) *wechat.Server {
 	return app
 }
 
-func GetWechat(appid string, agentid int, secret string) *wechat.Server {
+func GetWechat(appid string, agentid string, secret string) *wechat.Server {
 	if appid == "" {
 		appid = DefaultAppId
 	}
-	if agentid == 0 || secret == "" {
+	if agentid == "" || secret == "" {
 		agentid = DefaultAgentId
 		secret = DefaultSecret
 	}
-	if client, ok := ClientCache[appid+"|"+strconv.Itoa(agentid)]; ok {
+	if client, ok := ClientCache[appid+"|"+agentid]; ok {
 		return client
 	} else {
-		return NewWechat(appid, agentid, secret)
+		agentId, err := strconv.Atoi(agentid)
+		if err != nil {
+			panic(err)
+		}
+		return NewWechat(appid, agentId, secret)
 	}
 }
 
@@ -67,8 +78,7 @@ func Send(w http.ResponseWriter, r *http.Request) {
 		_content = r.PostFormValue("content")
 		println(r.PostForm)
 	}
-	agent_id, _ := strconv.Atoi(_agentId)
-	app := GetWechat(_appId, agent_id, _secret)
+	app := GetWechat(_appId, _agentId, _secret)
 	if value, ok := cache[_content]; ok {
 		if value < time.Now().Unix() {
 			cache[_content] = time.Now().Unix() + 30*60
@@ -82,12 +92,7 @@ func Send(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	addr := flag.String("l", ":20000", "监听地址")
-	flag.StringVar(&DefaultAppId, "c", "", "企业ID") //CorpID
-	flag.IntVar(&DefaultAgentId, "a", 0, "应用ID")
-	flag.StringVar(&DefaultSecret, "s", "", "应用Secret")
-	flag.Parse()
 	InitRoute()
-	fmt.Println("server running,", *addr)
-	http.ListenAndServe(*addr, nil)
+	fmt.Println("server running,", DefaultListen)
+	http.ListenAndServe(DefaultListen, nil)
 }
