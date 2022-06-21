@@ -24,6 +24,7 @@ func init() {
 	DefaultSecret = os.Getenv("SECRET")
 	DefaultListen = os.Getenv("LISTEN")
 }
+
 func NewWechat(appid string, agentid int, secret string) *wechat.Server {
 	cfg := &wechat.WxConfig{
 		AppId:   appid,
@@ -94,5 +95,8 @@ func Send(w http.ResponseWriter, r *http.Request) {
 func main() {
 	InitRoute()
 	fmt.Println("server running,", DefaultListen)
-	http.ListenAndServe(DefaultListen, nil)
+	err := http.ListenAndServe(DefaultListen, nil)
+	if err != nil {
+		panic(err)
+	}
 }
